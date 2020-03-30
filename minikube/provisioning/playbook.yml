@@ -1,0 +1,71 @@
+---
+
+- name: Install docker
+  hosts: default
+  become: yes
+  
+  tasks:  
+  - name: Install dependencies
+    yum:
+      name: ['device-mapper-persistent-data', 'lvm2']
+      state: latest
+
+  - name: Add docker repository
+    yum_repository:
+      name: "docker-ce-stable"
+      description: "Docker CE Stable - $basearch"
+      baseurl: "https://download.docker.com/linux/centos/7/$basearch/stable"
+      enabled: yes
+      gpgcheck: yes
+      gpgkey: "https://download.docker.com/linux/centos/gpg"
+
+  - name: Install docker
+    yum:
+      name: ['docker-ce', 'docker-ce-cli', 'containerd.io']
+      state: latest
+
+  - name: Start and enable docker
+    systemd:
+      name: docker
+      state: started
+      enabled: yes
+
+- name: Install minikube
+  hosts: default
+  become: yes
+  
+  tasks:
+  - name: Disable SWAP (1/2)
+    command: "swapoff -a"
+
+  - name: Disable SWAP (2/2)
+    lineinfile:
+      path: /etc/fstab
+      regexp: "^/swapfile"
+      state: absent
+
+  - name: Enable net.bridge.bridge-nf-call-iptables
+    sysctl:
+      name: net.bridge.bridge-nf-call-iptables
+      value: '1'
+      sysctl_set: yes
+      state: present
+      reload: yes   
+
+  - name: Install minikube binary
+    get_url:
+      url: "https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64"
+      dest: "/usr/bin/minikube"
+      mode: "0755"
+
+  - name: Install kubectl binary (1/2)
+    uri:
+      url: "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
+      return_content: yes
+    register: version
+
+  - name: Install kubectl binary (2/2)
+    get_url: 
+      url: "https://storage.googleapis.com/kubernetes-release/release/{{ version.content | trim }}/bin/linux/amd64/kubectl"
+      dest: "/usr/bin/kubectl"
+      mode: "0755"

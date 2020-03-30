@@ -1,0 +1,85 @@
+---
+- hosts: all
+
+  tasks:
+  - name: Create automation user
+    user:
+      name: automation
+      comment: ansible automation
+
+  - name: Add automation user to sudoers
+    copy:
+      content: 'automation    ALL=(ALL)       NOPASSWD: ALL'
+      dest: /etc/sudoers.d/automation
+      mode: '0440'
+
+  - name: Create .ssh directory
+    file:
+      path: /home/automation/.ssh
+      state: directory
+      owner: automation
+      group: automation
+      mode: '0700'
+  - name: debug
+    debug:
+      var: hostvars['ansible01']
+  - name: Create hosts file
+    template:
+      src: hosts.j2
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+    
+
+- hosts: controllers
+
+  tasks:
+  - name: Copy rsa private key
+    copy:
+      src: id_rsa
+      dest: /home/automation/.ssh/id_rsa
+      owner: automation
+      group: automation
+      mode: '0600'
+
+  - name: Create ansible repository
+    yum_repository:
+      name: ansible
+      description: Ansible YUM repo
+      baseurl: https://releases.ansible.com/ansible/rpm/release/epel-7-x86_64/
+      gpgcheck: no
+
+  - name: Install httpd
+    yum:
+      name: httpd 
+      state: latest
+  
+  - name: Enable and start httpd
+    systemd:
+      name: httpd
+      state: started
+      enabled: yes
+
+  - name: Create http public directory
+    file:
+      path: /var/www/html/pub
+      state: directory
+      mode: '0755'
+
+  - name: Copy files to http public directory
+    copy:
+      src: '{{ item }}'
+      dest: /var/www/html/pub/{{ item }}
+    with_items:
+      - haproxy.tar
+      - phpinfo.tar
+
+- hosts: nodes
+
+  tasks:
+  - name: Add authorized keys
+    authorized_key:
+      user: automation
+      key: "{{ lookup( 'file', 'id_rsa.pub' ) }}"
+      state: present     

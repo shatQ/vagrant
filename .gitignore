@@ -1,0 +1,4 @@
+ansible-lab/.vagrant
+ansible-lab/.vagrant/*
+minikube/.vagrant
+minikube/.vagrant/*

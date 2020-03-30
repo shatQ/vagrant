@@ -1,0 +1,9 @@
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+{{ hostvars['control']['vagrant_ip'] }} {{ hostvars['control']['vagrant_fqdn'] }} {{ hostvars['control']['inventory_hostname'] }}
+{% for host in groups['nodes'] %}
+{{ hostvars[host]['vagrant_ip'] }} {{ hostvars[host]['vagrant_fqdn'] }} {{ hostvars[host]['inventory_hostname'] }}
+{% endfor %}
+
+

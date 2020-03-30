@@ -1,0 +1,94 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.define "control" do |control|
+    control.vm.box = "centos/7"
+    control.vm.hostname = 'control'
+
+    control.vm.network :private_network, ip: "192.168.9.220"
+
+    control.vm.provider :virtualbox do |vbox|
+      vbox.customize ["modifyvm", :id, "--memory", 512]
+      vbox.customize ["modifyvm", :id, "--name", "control"]
+    end
+  end
+
+  config.vm.define "ansible01" do |ansible01|
+    ansible01.vm.box = "centos/7"
+    ansible01.vm.hostname = 'ansible01'
+
+    ansible01.vm.network :private_network, ip: "192.168.9.221"
+
+    ansible01.vm.provider :virtualbox do |vb|
+      vb.linked_clone = true
+      vb.memory = 256
+      vb.name = "ansible01"
+    end
+  end
+
+  config.vm.define "ansible02" do |ansible02|
+    ansible02.vm.box = "centos/7"
+    ansible02.vm.hostname = 'ansible02'
+
+    ansible02.vm.network :private_network, ip: "192.168.9.222"
+
+    ansible02.vm.provider :virtualbox do |vbox|
+      vbox.customize ["modifyvm", :id, "--memory", 256]
+      vbox.customize ["modifyvm", :id, "--name", "ansible02"]
+    end
+  end
+
+  config.vm.define "ansible03" do |ansible03|
+    ansible03.vm.box = "centos/7"
+    ansible03.vm.hostname = 'ansible03'
+
+    ansible03.vm.network :private_network, ip: "192.168.9.223"
+
+    ansible03.vm.provider :virtualbox do |vbox|
+      vbox.customize ["modifyvm", :id, "--memory", 256]
+      vbox.customize ["modifyvm", :id, "--name", "ansible03"]
+    end
+  end
+
+  config.vm.define "ansible04" do |ansible04|
+    ansible04.vm.box = "centos/7"
+    ansible04.vm.hostname = 'ansible04'
+
+    ansible04.vm.network :private_network, ip: "192.168.9.224"
+
+    ansible04.vm.provider :virtualbox do |vbox|
+      vbox.customize ["modifyvm", :id, "--memory", 256]
+      vbox.customize ["modifyvm", :id, "--name", "ansible04"]
+    end
+  end
+
+  config.vm.define "ansible05" do |ansible05|
+    ansible05.vm.box = "centos/7"
+    ansible05.vm.hostname = 'ansible05'
+
+    ansible05.vm.network :private_network, ip: "192.168.9.225"
+
+    ansible05.vm.provider :virtualbox do |vbox|
+      vbox.customize ["modifyvm", :id, "--memory", 256]
+      vbox.customize ["modifyvm", :id, "--name", "ansible05"]
+    end
+  end
+
+  config.vm.provision :ansible do |ansible|
+    ansible.host_vars = {
+      "control" => { "vagrant_ip" =>  "192.168.9.220", "vagrant_fqdn" => "control.example.com" },
+      "ansible01" => { "vagrant_ip" =>  "192.168.9.221", "vagrant_fqdn" => "ansible01.example.com" },
+      "ansible02" => { "vagrant_ip" =>  "192.168.9.222", "vagrant_fqdn" => "ansible02.example.com" },
+      "ansible03" => { "vagrant_ip" =>  "192.168.9.223", "vagrant_fqdn" => "ansible03.example.com" },
+      "ansible04" => { "vagrant_ip" =>  "192.168.9.224", "vagrant_fqdn" => "ansible04.example.com" },
+      "ansible05" => { "vagrant_ip" =>  "192.168.9.225", "vagrant_fqdn" => "ansible05.example.com" },
+    }
+    ansible.groups = {
+      "controllers" => ["control"],
+      "nodes" => ["ansible0[1:5]"],
+    }
+    ansible.become = true
+    ansible.playbook = "provisioning/playbook.yml"
+  end
+end
